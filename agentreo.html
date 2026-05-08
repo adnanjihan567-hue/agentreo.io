@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentreo — AI Voice Agents</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #04050a;
+    --surface: #0d0f1a;
+    --card: #111420;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --gold: #f5c518;
+    --text: #e8eaf6;
+    --muted: #6b7194;
+    --border: rgba(255,255,255,0.07);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* GLOW BLOBS */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-1 { width: 500px; height: 500px; background: rgba(124,58,237,0.18); top: -100px; left: -150px; }
+  .blob-2 { width: 400px; height: 400px; background: rgba(0,229,255,0.1); bottom: 20%; right: -100px; }
+  .blob-3 { width: 300px; height: 300px; background: rgba(124,58,237,0.12); bottom: 10%; left: 20%; }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 60px;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    background: rgba(4,5,10,0.7);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo span { color: var(--gold); -webkit-text-fill-color: var(--gold); }
+
+  nav ul {
+    list-style: none;
+    display: flex;
+    gap: 36px;
+  }
+
+  nav ul a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s;
+    letter-spacing: 0.02em;
+  }
+
+  nav ul a:hover { color: var(--text); }
+
+  .nav-cta {
+    background: var(--accent);
+    color: #000 !important;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 700 !important;
+    transition: opacity 0.2s !important;
+  }
+  .nav-cta:hover { opacity: 0.85; color: #000 !important; }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 140px 40px 80px;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(0,229,255,0.3);
+    background: rgba(0,229,255,0.05);
+    color: var(--accent);
+    padding: 7px 18px;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .pulse-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(3rem, 7vw, 6.5rem);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.04em;
+    max-width: 900px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+
+  h1 .gradient-text {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 60%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-sub {
+    max-width: 580px;
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-top: 28px;
+    font-weight: 300;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 48px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0080ff);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 16px 36px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 40px rgba(0,229,255,0.25);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(0,229,255,0.4); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 16px 36px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--accent); background: rgba(0,229,255,0.05); }
+
+  /* STATS BAR */
+  .stats-bar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin: 0 60px 80px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    overflow: hidden;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  .stat {
+    flex: 1;
+    padding: 32px 24px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    display: block;
+  }
+
+  .stat-label {
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* SECTION */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 80px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-tag {
+    display: inline-block;
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .section-desc {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 520px;
+    font-weight: 300;
+  }
+
+  /* FEATURES GRID */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 56px;
+  }
+
+  .feature-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 30px;
+    transition: border-color 0.3s, transform 0.3s;
+    cursor: default;
+  }
+
+  .feature-card:hover {
+    border-color: rgba(0,229,255,0.25);
+    transform: translateY(-4px);
+  }
+
+  .feature-icon {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.15);
+  }
+
+  .feature-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+  }
+
+  .feature-card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    font-weight: 300;
+  }
+
+  /* HOW IT WORKS */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 56px;
+    position: relative;
+  }
+
+  .steps::before {
+    content: '';
+    position: absolute;
+    top: 32px;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    z-index: 0;
+  }
+
+  .step {
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-num {
+    width: 64px; height: 64px;
+    background: var(--card);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--accent);
+    margin: 0 auto 20px;
+    box-shadow: 0 0 30px rgba(0,229,255,0.2);
+  }
+
+  .step h4 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+
+  .step p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  /* PRICING */
+  .pricing-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 56px;
+  }
+
+  .pricing-card {
+    background: var(--card);
+    border: 1px solid rgba(0,229,255,0.3);
+    border-radius: 24px;
+    padding: 60px 56px;
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 80px rgba(0,229,255,0.1), 0 0 160px rgba(124,58,237,0.08);
+  }
+
+  .pricing-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), var(--gold));
+  }
+
+  .pricing-badge {
+    display: inline-block;
+    background: rgba(245,197,24,0.1);
+    border: 1px solid rgba(245,197,24,0.4);
+    color: var(--gold);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 100px;
+    margin-bottom: 28px;
+  }
+
+  .pricing-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .price {
+    font-family: 'Syne', sans-serif;
+    font-size: 5rem;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 24px 0 4px;
+  }
+
+  .price-note {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-bottom: 36px;
+  }
+
+  .pricing-features {
+    list-style: none;
+    text-align: left;
+    margin-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .pricing-features li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  .check {
+    width: 22px; height: 22px;
+    background: rgba(0,229,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,229,255,0.25);
+  }
+
+  /* TESTIMONIALS */
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 56px;
+  }
+
+  .testimonial {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    transition: border-color 0.3s;
+  }
+  .testimonial:hover { border-color: rgba(124,58,237,0.3); }
+
+  .stars {
+    color: var(--gold);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .testimonial p {
+    color: var(--text);
+    font-size: 0.92rem;
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+
+  .author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: #fff;
+  }
+
+  .author-info strong {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .author-info span {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  /* FAQ */
+  .faq-list {
+    max-width: 720px;
+    margin: 56px auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .faq-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+  .faq-item:hover { border-color: rgba(0,229,255,0.2); }
+
+  .faq-q {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: left;
+    padding: 20px 24px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .faq-q .arrow {
+    color: var(--accent);
+    font-size: 1.2rem;
+    transition: transform 0.3s;
+    flex-shrink: 0;
+  }
+
+  .faq-q.open .arrow { transform: rotate(45deg); }
+
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+  .faq-a.open { max-height: 300px; }
+  .faq-a-inner { padding: 0 24px 20px; }
+
+  /* CTA SECTION */
+  .cta-section {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 80px 60px 120px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .cta-section h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+
+  .cta-section p {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 40px;
+  }
+
+  /* FOOTER */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 40px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  footer .logo { font-size: 1.2rem; }
+
+  footer p {
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+
+  footer a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.82rem;
+    margin-left: 20px;
+    transition: color 0.2s;
+  }
+  footer a:hover { color: var(--accent); }
+
+  /* VOICE WAVE ANIMATION */
+  .wave-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin: 48px 0 0;
+    height: 60px;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+
+  .wave-bar {
+    width: 4px;
+    border-radius: 4px;
+    background: linear-gradient(to top, var(--accent2), var(--accent));
+    animation: wave 1.2s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { height: 20px; animation-delay: 0s; }
+  .wave-bar:nth-child(2) { height: 40px; animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { height: 55px; animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { height: 45px; animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { height: 60px; animation-delay: 0.4s; }
+  .wave-bar:nth-child(6) { height: 45px; animation-delay: 0.5s; }
+  .wave-bar:nth-child(7) { height: 55px; animation-delay: 0.6s; }
+  .wave-bar:nth-child(8) { height: 40px; animation-delay: 0.7s; }
+  .wave-bar:nth-child(9) { height: 20px; animation-delay: 0.8s; }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.4); }
+    50% { transform: scaleY(1); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    nav ul { display: none; }
+    section { padding: 60px 24px; }
+    .stats-bar { margin: 0 24px 60px; flex-wrap: wrap; }
+    .stat { min-width: 50%; border-right: none; border-bottom: 1px solid var(--border); }
+    .features-grid { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .steps::before { display: none; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 16px; text-align: center; }
+    .pricing-card { padding: 40px 28px; }
+    .hero { padding: 120px 24px 60px; }
+    .hero-actions { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Agent<span>reo</span></div>
+  <ul>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#contact" class="nav-cta">Get Started</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">
+    <div class="pulse-dot"></div>
+    AI-Powered Voice Agents — Live 24/7
+  </div>
+  <h1>
+    Your Business Never<br>
+    <span class="gradient-text">Stops Talking</span>
+  </h1>
+  <p class="hero-sub">
+    Agentreo deploys intelligent AI voice agents that handle calls, qualify leads, and close deals — completely on autopilot. No humans needed.
+  </p>
+  <div class="hero-actions">
+    <a href="#pricing" class="btn-primary">Get Your Agent — $4,999</a>
+    <a href="#how" class="btn-ghost">See How It Works →</a>
+  </div>
+  <div class="wave-container">
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-num">200+</span>
+    <div class="stat-label">Agents Deployed</div>
+  </div>
+  <div class="stat">
+    <span class="stat-num">98%</span>
+    <div class="stat-label">Call Answer Rate</div>
+  </div>
+  <div class="stat">
+    <span class="stat-num">24/7</span>
+    <div class="stat-label">Always Available</div>
+  </div>
+  <div class="stat">
+    <span class="stat-num">3x</span>
+    <div class="stat-label">More Leads Converted</div>
+  </div>
+  <div class="stat">
+    <span class="stat-num">$0</span>
+    <div class="stat-label">Per Extra Call</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-tag">What You Get</div>
+  <h2 class="section-title">Built to Sell,<br>Designed to Scale</h2>
+  <p class="section-desc">Every agent is custom-trained for your business — your tone, your offers, your scripts.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🎙️</div>
+      <h3>Human-Like Voice</h3>
+      <p>Ultra-realistic AI voices that sound natural, warm, and professional — your customers won't know the difference.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <h3>Custom-Trained AI</h3>
+      <p>Each agent is trained on your business, FAQs, products, and scripts. It speaks your brand language fluently.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📞</div>
+      <h3>Inbound & Outbound</h3>
+      <p>Handle incoming customer calls or automatically dial leads. Your agent works both ways, all day.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <h3>Appointment Booking</h3>
+      <p>Agents can schedule meetings, demos, and calls directly into your calendar without any manual work.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Live Call Transcripts</h3>
+      <p>Every conversation is recorded and transcribed. Review, analyze, and optimize anytime from your dashboard.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>CRM Integration</h3>
+      <p>Connect with GoHighLevel, HubSpot, Salesforce, and more. Every interaction syncs automatically.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" style="background: var(--surface); border-radius: 24px; max-width: 1120px; margin: 0 auto;">
+  <div class="section-tag">The Process</div>
+  <h2 class="section-title">Live in 7 Days</h2>
+  <p class="section-desc">From onboarding to your first automated call — we handle everything.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h4>Discovery Call</h4>
+      <p>We learn your business, goals, and ideal customer profile in a 30-minute session.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h4>Agent Training</h4>
+      <p>We build and train your custom AI agent with your scripts, FAQs, and objection handling.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h4>Integration Setup</h4>
+      <p>We connect your agent to your CRM, calendar, and phone number. Fully automated pipeline.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <h4>Go Live & Scale</h4>
+      <p>Your agent starts taking calls. We monitor performance and optimize for results.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" style="text-align: center;">
+  <div class="section-tag">Investment</div>
+  <h2 class="section-title">One Agent.<br>Unlimited Potential.</h2>
+  <p class="section-desc" style="margin: 0 auto;">Simple, transparent pricing. No monthly fees. No per-call charges. Just results.</p>
+
+  <div class="pricing-wrapper">
+    <div class="pricing-card">
+      <div class="pricing-badge">⚡ Most Popular</div>
+      <h3>AI Voice Agent — Full Setup</h3>
+      <div class="price">$4,999</div>
+      <p class="price-note">One-time payment · Delivered in 7 days</p>
+
+      <ul class="pricing-features">
+        <li><div class="check">✓</div> Custom-trained AI Voice Agent</li>
+        <li><div class="check">✓</div> Inbound + Outbound calling</li>
+        <li><div class="check">✓</div> Appointment booking integration</li>
+        <li><div class="check">✓</div> CRM & calendar sync</li>
+        <li><div class="check">✓</div> Call transcripts & recording dashboard</li>
+        <li><div class="check">✓</div> 30-day post-launch support</li>
+        <li><div class="check">✓</div> Unlimited calls — no per-call fees</li>
+        <li><div class="check">✓</div> Dedicated onboarding manager</li>
+      </ul>
+
+      <a href="#contact" class="btn-primary" style="display: block; text-align: center; width: 100%; font-size: 1.05rem; padding: 18px;">
+        Claim Your Agent Now →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section>
+  <div class="section-tag">Client Stories</div>
+  <h2 class="section-title">Real Results,<br>Real Businesses</h2>
+
+  <div class="testimonials-grid">
+    <div class="testimonial">
+      <div class="stars">★★★★★</div>
+      <p>"We went from missing 40% of our inbound calls to zero missed calls. Our revenue increased 60% in the first month. Agentreo is a game changer."</p>
+      <div class="author">
+        <div class="avatar">JM</div>
+        <div class="author-info">
+          <strong>James M.</strong>
+          <span>Real Estate Broker, Texas</span>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <div class="stars">★★★★★</div>
+      <p>"The AI sounds so natural, my clients have no idea they're talking to an agent. It books appointments better than my human reps ever did."</p>
+      <div class="author">
+        <div class="avatar">SK</div>
+        <div class="author-info">
+          <strong>Sarah K.</strong>
+          <span>Solar Company Owner, California</span>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <div class="stars">★★★★★</div>
+      <p>"Setup was done in under a week. The agent handles 200+ calls a day, qualifies leads, and syncs everything to our CRM. Best $4,999 I've ever spent."</p>
+      <div class="author">
+        <div class="avatar">DP</div>
+        <div class="author-info">
+          <strong>Daniel P.</strong>
+          <span>Insurance Agency, Florida</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" style="text-align: center;">
+  <div class="section-tag">FAQ</div>
+  <h2 class="section-title">Common Questions</h2>
+
+  <div class="faq-list">
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        How realistic does the AI voice sound?
+        <span class="arrow">+</span>
+      </button>
+      <div class="faq-a">
+        <div class="faq-a-inner">Our agents use the most advanced AI voice technology available — they sound warm, natural, and human. Most callers cannot tell they're speaking to an AI unless told.</div>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        What kind of businesses can use this?
+        <span class="arrow">+</span>
+      </button>
+      <div class="faq-a">
+        <div class="faq-a-inner">Any business that handles phone calls — real estate, insurance, solar, medical, legal, HVAC, SaaS, e-commerce, and more. If you have a phone, we can build you an agent.</div>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Are there monthly fees after the $4,999?
+        <span class="arrow">+</span>
+      </button>
+      <div class="faq-a">
+        <div class="faq-a-inner">The $4,999 is a one-time setup fee. There are small monthly platform fees for call minutes (typically $50–$200/month depending on volume), but no hidden charges from Agentreo.</div>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        How long does setup take?
+        <span class="arrow">+</span>
+      </button>
+      <div class="faq-a">
+        <div class="faq-a-inner">Most agents are live within 5–7 business days. This includes training, integration, testing, and final launch. We keep you updated throughout the entire process.</div>
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Can the agent handle objections and hard questions?
+        <span class="arrow">+</span>
+      </button>
+      <div class="faq-a">
+        <div class="faq-a-inner">Yes. We train each agent specifically on your common objections, FAQs, and edge cases. The agent knows when to push, when to empathize, and when to escalate to a human.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section" id="contact">
+  <div class="section-tag">Ready to Automate?</div>
+  <h2>Your Competitors Are<br><span style="background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Already Using AI.</span></h2>
+  <p>Don't let another call go unanswered. Get your AI voice agent built and deployed in 7 days.</p>
+  <a href="mailto:hello@agentreo.com" class="btn-primary" style="font-size: 1.1rem; padding: 20px 48px;">
+    Book a Free Strategy Call →
+  </a>
+  <p style="margin-top: 20px; font-size: 0.82rem; color: var(--muted);">No commitment. 30-minute call. We'll show you exactly how it works for your business.</p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo">Agent<span>reo</span></div>
+  <p style="color: var(--muted); font-size: 0.82rem;">© 2025 Agentreo. All rights reserved.</p>
+  <div>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="mailto:hello@agentreo.com">Contact</a>
+  </div>
+</footer>
+
+<script>
+  function toggleFaq(btn) {
+    const answer = btn.nextElementSibling;
+    const isOpen = answer.classList.contains('open');
+    // Close all
+    document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+    document.querySelectorAll('.faq-q').forEach(q => q.classList.remove('open'));
+    if (!isOpen) {
+      answer.classList.add('open');
+      btn.classList.add('open');
+    }
+  }
+
+  // Intersection Observer for fade-in
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.feature-card, .testimonial, .step, .faq-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(el);
+  });
+</script>
+
+</body>
+</html>
